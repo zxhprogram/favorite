@@ -11,7 +11,25 @@ class IndexPage extends StatelessWidget {
     return Scaffold(
       child: Row(
         children: [
-          SizedBox(width: 200, child: SlideBar()),
+          SizedBox(
+            width: 200,
+            child: Column(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  margin: .all(10),
+                  child: Column(
+                    children: [
+                      Container(width: 80, height: 80, color: Colors.red),
+                      Text('点击登录'),
+                    ],
+                  ),
+                ),
+                Expanded(child: SlideBar()),
+              ],
+            ),
+          ),
           Expanded(child: Container(child: childPage)),
         ],
       ),
