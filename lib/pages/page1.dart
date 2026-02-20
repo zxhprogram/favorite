@@ -28,10 +28,12 @@ class Page1 extends StatelessWidget {
   TextEditingController titleController = .new();
   Widget fetchTagImg(String? url) {
     switch (newTagMimeType) {
-      case 'ico':
+      case 'icon':
         return IcoViewer(url: url!, key: ValueKey(url));
       case 'svg':
         return SvgPicture.network(url!, width: 80, height: 80);
+      case 'png':
+        return Image.network(url!);
       default:
         return Container();
     }
@@ -82,6 +84,11 @@ class Page1 extends StatelessWidget {
                         child: FormTableLayout(
                           rows: [
                             FormField<String>(
+                              key: FormKey(#url),
+                              label: Text('书签地址'),
+                              child: TextField(initialValue: '输入书签地址'),
+                            ),
+                            FormField<String>(
                               key: FormKey(#title),
                               label: Text('书签标题'),
                               child: TextField(
@@ -89,11 +96,6 @@ class Page1 extends StatelessWidget {
                                 autofocus: true,
                                 controller: titleController,
                               ),
-                            ),
-                            FormField<String>(
-                              key: FormKey(#url),
-                              label: Text('书签地址'),
-                              child: TextField(initialValue: '输入书签地址'),
                             ),
                           ],
                         ),
@@ -104,7 +106,7 @@ class Page1 extends StatelessWidget {
                         onPressed: () async {
                           var url = c.getValue(FormKey(#url));
                           var data = await fetchUrlInfo(url);
-                          titleController.text = data.title;
+                          titleController.text = data.title ?? '';
                           newTagImg.value = data.faviconUrl;
                           print('url = ${data.faviconUrl}');
                           newTagMimeType = data.mimeType;

@@ -107,6 +107,8 @@ func handleURLInfo(c *gin.Context) {
 	})
 }
 
+const chromeUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0"
+
 func getPageInfo(targetURL string) (*PageInfo, error) {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -114,7 +116,13 @@ func getPageInfo(targetURL string) (*PageInfo, error) {
 		},
 	}
 
-	resp, err := client.Get(targetURL)
+	req, err := http.NewRequest("GET", targetURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", chromeUserAgent)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +222,13 @@ func downloadFavicon(faviconURL string) ([]byte, string, error) {
 		},
 	}
 
-	resp, err := client.Get(faviconURL)
+	req, err := http.NewRequest("GET", faviconURL, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	req.Header.Set("User-Agent", chromeUserAgent)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

@@ -3,6 +3,11 @@ import 'package:dio/dio.dart';
 final mimeTypeMaps = <String, String>{
   'image/x-icon': 'icon',
   'image/svg+xml': 'svg',
+  'image/png': 'png',
+  'image/jpg': 'png',
+  'image/jpeg': 'png',
+  'image/gif': 'png',
+  'image/vnd.microsoft.icon': 'icon',
 };
 
 Future<UrlInfoRes> fetchUrlInfo(String url) async {
@@ -33,7 +38,7 @@ class UrlInfoReq {
 class UrlInfoRes {
   final bool success;
   final String url;
-  final String title;
+  final String? title;
   final String faviconUrl;
   final String mimeType;
 
@@ -42,6 +47,6 @@ class UrlInfoRes {
     required this.url,
     required this.faviconUrl,
     required this.mimeType,
-    required this.title,
+    this.title,
   });
 }
