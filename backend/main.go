@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -24,6 +26,7 @@ const (
 	jwtSecret       = "your-secret-key-change-this-in-production"
 	jwtExpireHours  = 24
 	captchaExpire   = 5 * time.Minute
+	uploadDir       = "./uploads"
 )
 
 var db *gorm.DB
@@ -34,6 +37,7 @@ type User struct {
 	Email     string    `gorm:"uniqueIndex;not null" json:"email"`
 	Password  string    `gorm:"not null" json:"password"`
 	Nickname  string    `gorm:"not null" json:"nickname"`
+	Avatar    string    `gorm:"default:''" json:"avatar"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -94,6 +98,24 @@ type CaptchaResponse struct {
 	Error     string `json:"error,omitempty"`
 }
 
+type UploadResponse struct {
+	Success bool   `json:"success"`
+	URL     string `json:"url,omitempty"`
+	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
+type UpdateAvatarRequest struct {
+	AvatarURL string `json:"avatar_url" binding:"required,url"`
+}
+
+type UpdateAvatarResponse struct {
+	Success bool   `json:"success"`
+	Avatar  string `json:"avatar,omitempty"`
+	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
 // JWT Claims
 type JWTClaims struct {
 	Email    string `json:"email"`
@@ -114,6 +136,9 @@ func main() {
 	// Auto migrate tables
 	db.AutoMigrate(&User{}, &Captcha{})
 
+	// Create upload directory
+	os.MkdirAll(uploadDir+"/avatars", os.ModePerm)
+
 	r := gin.Default()
 
 	// CORS middleware
@@ -131,6 +156,9 @@ func main() {
 		c.Next()
 	})
 
+	// Static file server for uploads
+	r.Static("/uploads", uploadDir)
+
 	r.POST("/urlInfo", handleURLInfo)
 
 	// Auth routes
@@ -138,7 +166,54 @@ func main() {
 	r.POST("/auth/register", handleRegister)
 	r.POST("/auth/login", handleLogin)
 
+	// Upload route (no auth required for upload)
+	r.POST("/upload/avatar", handleUploadAvatar)
+
+	// Protected routes
+	authorized := r.Group("/")
+	authorized.Use(authMiddleware())
+	{
+		authorized.POST("/user/avatar", handleUpdateAvatar)
+	}
+
 	r.Run(":8081")
+}
+
+// Auth middleware
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "缺少Authorization头"})
+			c.Abort()
+			return
+		}
+
+		// Extract token from "Bearer <token>"
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Authorization格式错误"})
+			c.Abort()
+			return
+		}
+
+		tokenString := parts[1]
+		claims := &JWTClaims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtSecret), nil
+		})
+
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Token无效或已过期"})
+			c.Abort()
+			return
+		}
+
+		// Set user email in context
+		c.Set("userEmail", claims.Email)
+		c.Next()
+	}
 }
 
 // Generate 4-digit captcha code
@@ -392,6 +467,131 @@ func generateToken(user *User) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtSecret))
+}
+
+// Upload avatar handler
+func handleUploadAvatar(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, UploadResponse{
+			Success: false,
+			Error:   "获取文件失败: " + err.Error(),
+		})
+		return
+	}
+	defer file.Close()
+
+	// Check file size (max 5MB)
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, UploadResponse{
+			Success: false,
+			Error:   "文件大小不能超过5MB",
+		})
+		return
+	}
+
+	// Check file type
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UploadResponse{
+			Success: false,
+			Error:   "读取文件失败",
+		})
+		return
+	}
+	file.Seek(0, 0)
+
+	contentType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(contentType, "image/") {
+		c.JSON(http.StatusBadRequest, UploadResponse{
+			Success: false,
+			Error:   "只能上传图片文件",
+		})
+		return
+	}
+
+	// Generate unique filename
+	ext := filepath.Ext(header.Filename)
+	if ext == "" {
+		ext = ".jpg"
+	}
+	filename := fmt.Sprintf("%d%d%s", time.Now().UnixNano(), rand.Intn(10000), ext)
+	filepath := filepath.Join(uploadDir, "avatars", filename)
+
+	// Save file
+	out, err := os.Create(filepath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UploadResponse{
+			Success: false,
+			Error:   "保存文件失败",
+		})
+		return
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UploadResponse{
+			Success: false,
+			Error:   "保存文件失败",
+		})
+		return
+	}
+
+	// Generate URL
+	fileURL := fmt.Sprintf("/uploads/avatars/%s", filename)
+
+	c.JSON(http.StatusOK, UploadResponse{
+		Success: true,
+		URL:     fileURL,
+		Message: "上传成功",
+	})
+}
+
+// Update avatar handler
+func handleUpdateAvatar(c *gin.Context) {
+	userEmail, exists := c.Get("userEmail")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, UpdateAvatarResponse{
+			Success: false,
+			Error:   "未授权",
+		})
+		return
+	}
+
+	var req UpdateAvatarRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, UpdateAvatarResponse{
+			Success: false,
+			Error:   "请求参数错误: " + err.Error(),
+		})
+		return
+	}
+
+	// Update user avatar
+	result := db.Model(&User{}).Where("email = ?", userEmail).Update("avatar", req.AvatarURL)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, UpdateAvatarResponse{
+			Success: false,
+			Error:   "更新头像失败",
+		})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, UpdateAvatarResponse{
+			Success: false,
+			Error:   "用户不存在",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, UpdateAvatarResponse{
+		Success: true,
+		Avatar:  req.AvatarURL,
+		Message: "头像更新成功",
+	})
 }
 
 // URL Info handler

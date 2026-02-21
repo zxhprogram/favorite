@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:favorites/main.dart';
 import 'package:flutter/foundation.dart';
 
 final mimeTypeMaps = <String, String>{
@@ -12,6 +14,26 @@ final mimeTypeMaps = <String, String>{
   'image/gif': 'png',
   'image/vnd.microsoft.icon': 'icon',
 };
+
+class UploadAvatarRes {
+  bool success;
+  String url;
+  String message;
+
+  UploadAvatarRes({
+    required this.success,
+    required this.url,
+    required this.message,
+  });
+
+  factory UploadAvatarRes.fromJson(Map<String, dynamic> json) {
+    return .new(
+      success: json['success'],
+      url: json['url'],
+      message: json['message'],
+    );
+  }
+}
 
 class CaptchaRes {
   bool success;
@@ -65,6 +87,23 @@ class LoginReq {
       'captcha_code': captchaCode,
     };
   }
+}
+
+Future<UploadAvatarRes> uploadAvatar(File file) async {
+  MultipartFile multipartFile = await MultipartFile.fromFile(
+    file.path,
+    filename: file.path.split('/').last,
+  );
+  var form = FormData.fromMap({'file': multipartFile});
+  var r = await dio.post(
+    '/upload/avatar',
+    data: form,
+    options: .new(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+  print(r.data);
+  return .fromJson(r.data);
 }
 
 Future<LoginRes> login(LoginReq req) async {

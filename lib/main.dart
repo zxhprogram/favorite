@@ -47,9 +47,11 @@ class LoginInfo {
   String? currentUserName;
   String? currentUserAvatar;
   bool isLogin;
+  String? token;
 
   LoginInfo({
     required this.isLogin,
+    this.token,
     this.currentUserName,
     this.currentUserAvatar,
   });

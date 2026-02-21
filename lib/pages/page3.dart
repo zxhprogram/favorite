@@ -140,6 +140,7 @@ class _Page3State extends State<Page3> {
                         loginInfo.value = .new(
                           isLogin: true,
                           currentUserName: r.nickname,
+                          token: r.token,
                         );
                         context.pop();
                       },
