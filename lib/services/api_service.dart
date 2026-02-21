@@ -43,6 +43,66 @@ class CaptchaRes {
 }
 
 var dio = Dio(.new(baseUrl: 'http://localhost:8081'));
+
+class LoginReq {
+  String email;
+  String password;
+  String captchaId;
+  String captchaCode;
+  LoginReq({
+    required this.email,
+    required this.password,
+    required this.captchaId,
+    required this.captchaCode,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'password': password,
+      'captcha_id': captchaId,
+      'captcha_code': captchaCode,
+    };
+  }
+}
+
+Future<void> login(LoginReq req) async {
+  print(req.toJson());
+  var r = await dio.post('/auth/login', data: req.toJson());
+  print(r.data);
+}
+
+Future<void> createAccount(CreateAccountReq req) async {
+  var r = await dio.post('/auth/register', data: req.toJson());
+  print(r.data);
+}
+
+class CreateAccountReq {
+  String email;
+  String password;
+  String nickname;
+  String captchaId;
+  String captchaCode;
+
+  CreateAccountReq({
+    required this.email,
+    required this.password,
+    required this.nickname,
+    required this.captchaId,
+    required this.captchaCode,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'nickname': nickname,
+      'password': password,
+      'captcha_id': captchaId,
+      'captcha_code': captchaCode,
+    };
+  }
+}
+
 Future<CaptchaRes> captchaCode() async {
   var res = await dio.get('/auth/captcha');
   return CaptchaRes.from(res.data);

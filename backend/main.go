@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/fogleman/gg"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const (
@@ -24,7 +26,25 @@ const (
 	captchaExpire   = 5 * time.Minute
 )
 
-// URL Info types
+var db *gorm.DB
+
+// Database models
+type User struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Email     string    `gorm:"uniqueIndex;not null" json:"email"`
+	Password  string    `gorm:"not null" json:"password"`
+	Nickname  string    `gorm:"not null" json:"nickname"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Captcha struct {
+	ID        string    `gorm:"primaryKey" json:"id"`
+	Code      string    `gorm:"not null" json:"code"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Request/Response types
 type URLInfoRequest struct {
 	URL string `json:"url" binding:"required"`
 }
@@ -42,14 +62,6 @@ type URLInfoResponse struct {
 type PageInfo struct {
 	Title      string
 	FaviconURL string
-}
-
-// User types
-type User struct {
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	Nickname  string    `json:"nickname"`
-	CreatedAt time.Time `json:"created_at"`
 }
 
 type RegisterRequest struct {
@@ -81,24 +93,6 @@ type CaptchaResponse struct {
 	Error     string `json:"error,omitempty"`
 }
 
-// Captcha info
-type CaptchaInfo struct {
-	Code      string
-	CreatedAt time.Time
-}
-
-// In-memory storage
-type Store struct {
-	users    map[string]*User
-	captchas map[string]*CaptchaInfo
-	mu       sync.RWMutex
-}
-
-var store = &Store{
-	users:    make(map[string]*User),
-	captchas: make(map[string]*CaptchaInfo),
-}
-
 // JWT Claims
 type JWTClaims struct {
 	Email    string `json:"email"`
@@ -107,7 +101,34 @@ type JWTClaims struct {
 }
 
 func main() {
+	var err error
+	// Initialize SQLite database
+	db, err = gorm.Open(sqlite.Open("app.db"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	// Auto migrate tables
+	db.AutoMigrate(&User{}, &Captcha{})
+
 	r := gin.Default()
+
+	// CORS middleware
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
+		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
 
 	r.POST("/urlInfo", handleURLInfo)
 
@@ -190,15 +211,8 @@ func drawCaptchaImage(code string) ([]byte, error) {
 
 // Clean expired captchas
 func cleanExpiredCaptchas() {
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	now := time.Now()
-	for id, info := range store.captchas {
-		if now.Sub(info.CreatedAt) > captchaExpire {
-			delete(store.captchas, id)
-		}
-	}
+	expirationTime := time.Now().Add(-captchaExpire)
+	db.Where("created_at < ?", expirationTime).Delete(&Captcha{})
 }
 
 // Get captcha handler
@@ -217,12 +231,13 @@ func handleGetCaptcha(c *gin.Context) {
 		return
 	}
 
-	store.mu.Lock()
-	store.captchas[captchaID] = &CaptchaInfo{
+	// Save to database
+	captcha := &Captcha{
+		ID:        captchaID,
 		Code:      code,
 		CreatedAt: time.Now(),
 	}
-	store.mu.Unlock()
+	db.Create(captcha)
 
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 
@@ -235,26 +250,22 @@ func handleGetCaptcha(c *gin.Context) {
 
 // Verify captcha
 func verifyCaptcha(captchaID, code string) bool {
-	store.mu.RLock()
-	info, exists := store.captchas[captchaID]
-	store.mu.RUnlock()
-
-	if !exists {
+	var captcha Captcha
+	result := db.Where("id = ?", captchaID).First(&captcha)
+	if result.Error != nil {
 		return false
 	}
 
-	if time.Since(info.CreatedAt) > captchaExpire {
+	if time.Since(captcha.CreatedAt) > captchaExpire {
 		return false
 	}
 
-	return strings.EqualFold(info.Code, code)
+	return strings.EqualFold(captcha.Code, code)
 }
 
 // Clear captcha after use
 func clearCaptcha(captchaID string) {
-	store.mu.Lock()
-	delete(store.captchas, captchaID)
-	store.mu.Unlock()
+	db.Where("id = ?", captchaID).Delete(&Captcha{})
 }
 
 // Register handler
@@ -278,11 +289,9 @@ func handleRegister(c *gin.Context) {
 	}
 
 	// Check if user already exists
-	store.mu.RLock()
-	_, exists := store.users[req.Email]
-	store.mu.RUnlock()
-
-	if exists {
+	var existingUser User
+	result := db.Where("email = ?", req.Email).First(&existingUser)
+	if result.Error == nil {
 		c.JSON(http.StatusConflict, AuthResponse{
 			Success: false,
 			Error:   "该邮箱已被注册",
@@ -298,9 +307,14 @@ func handleRegister(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	store.mu.Lock()
-	store.users[req.Email] = user
-	store.mu.Unlock()
+	result = db.Create(user)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, AuthResponse{
+			Success: false,
+			Error:   "注册失败",
+		})
+		return
+	}
 
 	// Clear used captcha
 	clearCaptcha(req.CaptchaID)
@@ -332,11 +346,9 @@ func handleLogin(c *gin.Context) {
 	}
 
 	// Verify user credentials
-	store.mu.RLock()
-	user, exists := store.users[req.Email]
-	store.mu.RUnlock()
-
-	if !exists || user.Password != req.Password {
+	var user User
+	result := db.Where("email = ? AND password = ?", req.Email, req.Password).First(&user)
+	if result.Error != nil {
 		c.JSON(http.StatusUnauthorized, AuthResponse{
 			Success: false,
 			Error:   "邮箱或密码错误",
@@ -345,7 +357,7 @@ func handleLogin(c *gin.Context) {
 	}
 
 	// Generate JWT token
-	token, err := generateToken(user)
+	token, err := generateToken(&user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, AuthResponse{
 			Success: false,
