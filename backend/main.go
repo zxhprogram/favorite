@@ -87,6 +87,7 @@ type AuthResponse struct {
 	Success  bool   `json:"success"`
 	Token    string `json:"token,omitempty"`
 	Nickname string `json:"nickname,omitempty"`
+	Avatar   string `json:"avatar,omitempty"`
 	Message  string `json:"message,omitempty"`
 	Error    string `json:"error,omitempty"`
 }
@@ -165,10 +166,6 @@ func main() {
 	r.GET("/auth/captcha", handleGetCaptcha)
 	r.POST("/auth/register", handleRegister)
 	r.POST("/auth/login", handleLogin)
-
-	// Upload route (no auth required for upload)
-	r.POST("/upload/avatar", handleUploadAvatar)
-
 	// Protected routes
 	authorized := r.Group("/")
 	authorized.Use(authMiddleware())
@@ -449,6 +446,7 @@ func handleLogin(c *gin.Context) {
 		Success:  true,
 		Token:    token,
 		Nickname: user.Nickname,
+		Avatar:   user.Avatar,
 		Message:  "登录成功",
 	})
 }
@@ -470,45 +468,29 @@ func generateToken(user *User) (string, error) {
 }
 
 // Upload avatar handler
-func handleUploadAvatar(c *gin.Context) {
+func handleUploadAvatar(c *gin.Context) UploadResponse {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, UploadResponse{
-			Success: false,
-			Error:   "获取文件失败: " + err.Error(),
-		})
-		return
+		return UploadResponse{Success: false, Error: err.Error()}
 	}
 	defer file.Close()
 
 	// Check file size (max 5MB)
 	if header.Size > 5*1024*1024 {
-		c.JSON(http.StatusBadRequest, UploadResponse{
-			Success: false,
-			Error:   "文件大小不能超过5MB",
-		})
-		return
+		return UploadResponse{Success: false, Error: "文件大小不能超过5MB"}
 	}
 
 	// Check file type
 	buffer := make([]byte, 512)
 	_, err = file.Read(buffer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, UploadResponse{
-			Success: false,
-			Error:   "读取文件失败",
-		})
-		return
+		return UploadResponse{Success: false, Error: "读取文件失败"}
 	}
 	file.Seek(0, 0)
 
 	contentType := http.DetectContentType(buffer)
 	if !strings.HasPrefix(contentType, "image/") {
-		c.JSON(http.StatusBadRequest, UploadResponse{
-			Success: false,
-			Error:   "只能上传图片文件",
-		})
-		return
+		return UploadResponse{Success: false, Error: "只能上传图片文件"}
 	}
 
 	// Generate unique filename
@@ -522,31 +504,27 @@ func handleUploadAvatar(c *gin.Context) {
 	// Save file
 	out, err := os.Create(filepath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, UploadResponse{
-			Success: false,
-			Error:   "保存文件失败",
-		})
-		return
+		//c.JSON(http.StatusInternalServerError, UploadResponse{
+		//	Success: false,
+		//	Error:   "保存文件失败",
+		//})
+		return UploadResponse{Success: false, Error: "保存文件失败"}
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, UploadResponse{
-			Success: false,
-			Error:   "保存文件失败",
-		})
-		return
+		return UploadResponse{Success: false, Error: "保存文件失败"}
 	}
 
 	// Generate URL
 	fileURL := fmt.Sprintf("/uploads/avatars/%s", filename)
 
-	c.JSON(http.StatusOK, UploadResponse{
+	return UploadResponse{
 		Success: true,
 		URL:     fileURL,
 		Message: "上传成功",
-	})
+	}
 }
 
 // Update avatar handler
@@ -559,18 +537,10 @@ func handleUpdateAvatar(c *gin.Context) {
 		})
 		return
 	}
-
-	var req UpdateAvatarRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, UpdateAvatarResponse{
-			Success: false,
-			Error:   "请求参数错误: " + err.Error(),
-		})
-		return
-	}
+	response := handleUploadAvatar(c)
 
 	// Update user avatar
-	result := db.Model(&User{}).Where("email = ?", userEmail).Update("avatar", req.AvatarURL)
+	result := db.Model(&User{}).Where("email = ?", userEmail).Update("avatar", response.URL)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, UpdateAvatarResponse{
 			Success: false,
@@ -589,7 +559,7 @@ func handleUpdateAvatar(c *gin.Context) {
 
 	c.JSON(http.StatusOK, UpdateAvatarResponse{
 		Success: true,
-		Avatar:  req.AvatarURL,
+		Avatar:  response.URL,
 		Message: "头像更新成功",
 	})
 }

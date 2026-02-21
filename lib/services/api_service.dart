@@ -96,7 +96,7 @@ Future<UploadAvatarRes> uploadAvatar(File file) async {
   );
   var form = FormData.fromMap({'file': multipartFile});
   var r = await dio.post(
-    '/upload/avatar',
+    '/user/avatar',
     data: form,
     options: .new(
       headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
@@ -111,6 +111,7 @@ Future<LoginRes> login(LoginReq req) async {
   if (r.statusCode != 200) {
     return .failLogin();
   }
+  print('login -> ${r.data}');
   return .fromJson(r.data);
 }
 
@@ -119,12 +120,14 @@ class LoginRes {
   String token;
   String? nickname;
   String message;
+  String? avatar;
 
   LoginRes({
     required this.success,
     required this.token,
     required this.message,
     this.nickname,
+    this.avatar,
   });
 
   factory LoginRes.fromJson(Map<String, dynamic> map) {
@@ -133,6 +136,7 @@ class LoginRes {
       token: map['token'] as String,
       nickname: map['nickname'] as String?,
       message: map['message'] as String,
+      avatar: map['avatar'] as String?,
     );
   }
 
