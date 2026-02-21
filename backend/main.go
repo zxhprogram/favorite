@@ -80,10 +80,11 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-	Success bool   `json:"success"`
-	Token   string `json:"token,omitempty"`
-	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Success  bool   `json:"success"`
+	Token    string `json:"token,omitempty"`
+	Nickname string `json:"nickname,omitempty"`
+	Message  string `json:"message,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
 
 type CaptchaResponse struct {
@@ -370,9 +371,10 @@ func handleLogin(c *gin.Context) {
 	clearCaptcha(req.CaptchaID)
 
 	c.JSON(http.StatusOK, AuthResponse{
-		Success: true,
-		Token:   token,
-		Message: "登录成功",
+		Success:  true,
+		Token:    token,
+		Nickname: user.Nickname,
+		Message:  "登录成功",
 	})
 }
 

@@ -49,6 +49,7 @@ class LoginReq {
   String password;
   String captchaId;
   String captchaCode;
+
   LoginReq({
     required this.email,
     required this.password,
@@ -66,10 +67,39 @@ class LoginReq {
   }
 }
 
-Future<void> login(LoginReq req) async {
-  print(req.toJson());
+Future<LoginRes> login(LoginReq req) async {
   var r = await dio.post('/auth/login', data: req.toJson());
-  print(r.data);
+  if (r.statusCode != 200) {
+    return .failLogin();
+  }
+  return .fromJson(r.data);
+}
+
+class LoginRes {
+  bool success;
+  String token;
+  String? nickname;
+  String message;
+
+  LoginRes({
+    required this.success,
+    required this.token,
+    required this.message,
+    this.nickname,
+  });
+
+  factory LoginRes.fromJson(Map<String, dynamic> map) {
+    return .new(
+      success: map['success'] as bool,
+      token: map['token'] as String,
+      nickname: map['nickname'] as String?,
+      message: map['message'] as String,
+    );
+  }
+
+  factory LoginRes.failLogin() {
+    return LoginRes(success: false, token: '', message: '');
+  }
 }
 
 Future<void> createAccount(CreateAccountReq req) async {
@@ -126,7 +156,9 @@ Future<UrlInfoRes> fetchUrlInfo(String url) async {
 
 class UrlInfoReq {
   String url;
+
   UrlInfoReq({required this.url});
+
   Map<String, dynamic> toJson() {
     return {'url': url};
   }

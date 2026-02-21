@@ -1,13 +1,16 @@
+import 'package:favorites/main.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 
 class IndexPage extends StatelessWidget {
   final Widget childPage;
+
   const IndexPage({required this.childPage, super.key});
 
   @override
   Widget build(BuildContext context) {
+    var r = loginInfo.watch(context);
     return Scaffold(
       child: Row(
         children: [
@@ -18,13 +21,14 @@ class IndexPage extends StatelessWidget {
                 Container(
                   width: 100,
                   height: 100,
-                  margin: .all(10),
+                  margin: .all(5),
                   child: Column(
                     children: [
-                      Container(width: 80, height: 80, color: Colors.red),
-                      // Text('点击登录'),
-                      Button.card(
-                        child: Text('点击登录'),
+                      Container(width: 70, height: 70, color: Colors.red),
+                      Button.ghost(
+                        child: r.isLogin
+                            ? Text(r.currentUserName!)
+                            : Text('点击登录'),
                         onPressed: () {
                           print(1);
                           context.push('/login');
