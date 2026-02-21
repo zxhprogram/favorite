@@ -22,7 +22,14 @@ class IndexPage extends StatelessWidget {
                   child: Column(
                     children: [
                       Container(width: 80, height: 80, color: Colors.red),
-                      Text('点击登录'),
+                      // Text('点击登录'),
+                      Button.card(
+                        child: Text('点击登录'),
+                        onPressed: () {
+                          print(1);
+                          context.push('/login');
+                        },
+                      ),
                     ],
                   ),
                 ),

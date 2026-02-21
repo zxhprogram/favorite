@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 final mimeTypeMaps = <String, String>{
   'image/x-icon': 'icon',
@@ -10,10 +13,44 @@ final mimeTypeMaps = <String, String>{
   'image/vnd.microsoft.icon': 'icon',
 };
 
+class CaptchaRes {
+  bool success;
+  String captchaId;
+  Uint8List image;
+
+  CaptchaRes({
+    required this.success,
+    required this.captchaId,
+    required this.image,
+  });
+
+  factory CaptchaRes.empty() {
+    return CaptchaRes(success: true, captchaId: '-1', image: .new(0));
+  }
+
+  factory CaptchaRes.from(Map<String, dynamic> map) {
+    return CaptchaRes(
+      success: map['success'] as bool,
+      captchaId: map['captcha_id'] as String,
+      image: convert(map['image'] as String),
+    );
+  }
+
+  static Uint8List convert(String base64Str) {
+    base64Str = base64Str.substring('data:image/png;base64,'.length);
+    return base64Decode(base64Str);
+  }
+}
+
+var dio = Dio(.new(baseUrl: 'http://localhost:8081'));
+Future<CaptchaRes> captchaCode() async {
+  var res = await dio.get('/auth/captcha');
+  return CaptchaRes.from(res.data);
+}
+
 Future<UrlInfoRes> fetchUrlInfo(String url) async {
-  var dio = Dio();
   var response = await dio.post(
-    'http://localhost:8081/urlInfo',
+    '/urlInfo',
     data: UrlInfoReq(url: url).toJson(),
   );
   var data = response.data;
