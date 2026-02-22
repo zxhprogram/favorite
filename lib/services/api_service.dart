@@ -29,7 +29,7 @@ class UploadAvatarRes {
   factory UploadAvatarRes.fromJson(Map<String, dynamic> json) {
     return .new(
       success: json['success'],
-      url: json['url'],
+      url: json['avatar'],
       message: json['message'],
     );
   }

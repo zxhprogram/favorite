@@ -141,7 +141,9 @@ class _Page3State extends State<Page3> {
                           isLogin: true,
                           currentUserName: r.nickname,
                           token: r.token,
-                          currentUserAvatar: 'http://localhost:8081${r.avatar}',
+                          currentUserAvatar: r.avatar == null
+                              ? null
+                              : 'http://localhost:8081${r.avatar}',
                         );
                         context.pop();
                       },

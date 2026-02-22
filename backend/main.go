@@ -35,7 +35,6 @@ func main() {
 	captchaHandler := handlers.NewCaptchaHandler()
 	authHandler := handlers.NewAuthHandler()
 	urlInfoHandler := handlers.NewURLInfoHandler()
-	uploadHandler := handlers.NewUploadHandler()
 	userHandler := handlers.NewUserHandler()
 
 	// 公开路由
@@ -43,7 +42,6 @@ func main() {
 	r.GET("/auth/captcha", captchaHandler.GetCaptcha)
 	r.POST("/auth/register", authHandler.Register)
 	r.POST("/auth/login", authHandler.Login)
-	r.POST("/upload/avatar", uploadHandler.UploadAvatar)
 
 	// 需要认证的路由
 	authorized := r.Group("/")

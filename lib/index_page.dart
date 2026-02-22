@@ -60,49 +60,48 @@ class _IndexPageState extends State<IndexPage> {
                                   : Container(color: Colors.red),
                               hovered
                                   ? Positioned(
-                                left: (70 - 20) / 2,
-                                top: (70 - 20) / 2,
-                                width: 20,
-                                height: 20,
-                                child: Button.fixed(
-                                  alignment: .center,
-                                  child: Icon(Icons.edit),
-                                  onPressed: () async {
-                                    var file = await FilePicker.platform
-                                        .pickFiles(
-                                      type: .image,
-                                      allowedExtensions: [
-                                        'png',
-                                        'jpg',
-                                        'jpeg',
-                                      ],
-                                      dialogTitle: '选择头像',
-                                      allowMultiple: false,
-                                    );
-                                    if (file == null) {
-                                      return;
-                                    }
-                                    print(
-                                      'file.names = ${file
-                                          .names},file.paths = ${file.paths}',
-                                    );
-                                    var result = await uploadAvatar(
-                                      File(file.paths[0]!),
-                                    );
-                                    if (result.success) {
-                                      loginInfo.value = .new(
-                                        isLogin: loginInfo.value.isLogin,
-                                        currentUserName: loginInfo
-                                            .value
-                                            .currentUserName,
-                                        token: loginInfo.value.token,
-                                        currentUserAvatar:
-                                        'http://localhost:8081${result.url}',
-                                      );
-                                    }
-                                  },
-                                ),
-                              )
+                                      left: (70 - 20) / 2,
+                                      top: (70 - 20) / 2,
+                                      width: 20,
+                                      height: 20,
+                                      child: Button.fixed(
+                                        alignment: .center,
+                                        child: Icon(Icons.edit),
+                                        onPressed: () async {
+                                          var file = await FilePicker.platform
+                                              .pickFiles(
+                                                type: .image,
+                                                allowedExtensions: [
+                                                  'png',
+                                                  'jpg',
+                                                  'jpeg',
+                                                ],
+                                                dialogTitle: '选择头像',
+                                                allowMultiple: false,
+                                              );
+                                          if (file == null) {
+                                            return;
+                                          }
+                                          print(
+                                            'file.names = ${file.names},file.paths = ${file.paths}',
+                                          );
+                                          var result = await uploadAvatar(
+                                            File(file.paths[0]!),
+                                          );
+                                          if (result.success) {
+                                            loginInfo.value = .new(
+                                              isLogin: loginInfo.value.isLogin,
+                                              currentUserName: loginInfo
+                                                  .value
+                                                  .currentUserName,
+                                              token: loginInfo.value.token,
+                                              currentUserAvatar:
+                                                  'http://localhost:8081${result.url}',
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    )
                                   : Container(),
                             ],
                           ),
@@ -163,8 +162,7 @@ class SlideBar extends StatelessWidget {
                 const ValueKey('/'),
               ),
 
-              buildButton(
-                  '大门', BootstrapIcons.grid, const ValueKey('/page2')),
+              buildButton('大门', BootstrapIcons.grid, const ValueKey('/page2')),
               buildButton('Radio', BootstrapIcons.broadcast, const ValueKey(2)),
             ],
           ),

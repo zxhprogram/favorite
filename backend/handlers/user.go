@@ -20,6 +20,8 @@ func NewUserHandler() *UserHandler {
 	}
 }
 
+var uploadHandler = NewUploadHandler()
+
 // UpdateAvatar 更新头像
 func (h *UserHandler) UpdateAvatar(c *gin.Context) {
 	userEmail, exists := c.Get("userEmail")
@@ -30,18 +32,9 @@ func (h *UserHandler) UpdateAvatar(c *gin.Context) {
 		})
 		return
 	}
-
-	var req models.UpdateAvatarRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.UpdateAvatarResponse{
-			Success: false,
-			Error:   "请求参数错误: " + err.Error(),
-		})
-		return
-	}
-
+	var res = uploadHandler.UploadAvatar(c)
 	// 更新用户头像
-	if err := h.service.UpdateAvatar(userEmail.(string), req.AvatarURL); err != nil {
+	if err := h.service.UpdateAvatar(userEmail.(string), res.URL); err != nil {
 		c.JSON(http.StatusInternalServerError, models.UpdateAvatarResponse{
 			Success: false,
 			Error:   "更新头像失败",
@@ -51,7 +44,7 @@ func (h *UserHandler) UpdateAvatar(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.UpdateAvatarResponse{
 		Success: true,
-		Avatar:  req.AvatarURL,
+		Avatar:  res.URL,
 		Message: "头像更新成功",
 	})
 }
