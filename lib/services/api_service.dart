@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:favorites/main.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 final mimeTypeMaps = <String, String>{
   'image/x-icon': 'icon',
@@ -64,7 +65,18 @@ class CaptchaRes {
   }
 }
 
-var dio = Dio(.new(baseUrl: 'http://localhost:8081'));
+var dio = Dio(.new(baseUrl: 'http://localhost:8081'))
+  ..interceptors.add(
+    PrettyDioLogger(
+      requestHeader: true,
+      requestBody: true,
+      responseBody: true,
+      error: true,
+      compact: true,
+      maxWidth: 90,
+      enabled: kDebugMode,
+    ),
+  );
 
 class LoginReq {
   String email;
@@ -179,6 +191,44 @@ class CreateAccountReq {
 Future<CaptchaRes> captchaCode() async {
   var res = await dio.get('/auth/captcha');
   return CaptchaRes.from(res.data);
+}
+
+Future<void> createBookmark(BookmarkCreateReq req) async {
+  if (!loginInfo.value.isLogin) {
+    print('no login');
+    return;
+  }
+  var r = await dio.post(
+    '/bookmarks',
+    data: req.toJson(),
+    options: .new(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+  print(r.data);
+}
+
+class BookmarkCreateReq {
+  String name;
+  String iconUrl;
+  String url;
+  String? description;
+
+  BookmarkCreateReq({
+    required this.name,
+    required this.iconUrl,
+    required this.url,
+    this.description,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'icon_url': iconUrl,
+      'url': url,
+      'description': description,
+    };
+  }
 }
 
 Future<UrlInfoRes> fetchUrlInfo(String url) async {

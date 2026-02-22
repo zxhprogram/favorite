@@ -36,6 +36,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler()
 	urlInfoHandler := handlers.NewURLInfoHandler()
 	userHandler := handlers.NewUserHandler()
+	bookmarkHandler := handlers.NewBookmarkHandler()
 
 	// 公开路由
 	r.POST("/urlInfo", urlInfoHandler.GetURLInfo)
@@ -48,6 +49,13 @@ func main() {
 	authorized.Use(middleware.Auth())
 	{
 		authorized.POST("/user/avatar", userHandler.UpdateAvatar)
+
+		// 书签相关路由
+		authorized.POST("/bookmarks", bookmarkHandler.Create)
+		authorized.GET("/bookmarks", bookmarkHandler.GetAll)
+		authorized.GET("/bookmarks/:id", bookmarkHandler.GetByID)
+		authorized.PUT("/bookmarks/:id", bookmarkHandler.Update)
+		authorized.DELETE("/bookmarks/:id", bookmarkHandler.Delete)
 	}
 
 	// 启动服务器

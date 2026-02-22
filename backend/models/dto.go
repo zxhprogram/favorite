@@ -77,3 +77,28 @@ type UpdateAvatarResponse struct {
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
+
+// CreateBookmarkRequest 创建书签请求
+type CreateBookmarkRequest struct {
+	Name        string `json:"name" binding:"required"`
+	IconURL     string `json:"icon_url" binding:"required"`
+	URL         string `json:"url" binding:"required,url"`
+	Description string `json:"description"`
+}
+
+// UpdateBookmarkRequest 更新书签请求
+type UpdateBookmarkRequest struct {
+	Name        string `json:"name" binding:"required"`
+	IconURL     string `json:"icon_url" binding:"omitempty,url"`
+	URL         string `json:"url" binding:"required,url"`
+	Description string `json:"description"`
+}
+
+// BookmarkResponse 书签响应
+type BookmarkResponse struct {
+	Success   bool       `json:"success"`
+	Bookmark  *Bookmark  `json:"bookmark,omitempty"`
+	Bookmarks []Bookmark `json:"bookmarks,omitempty"`
+	Message   string     `json:"message,omitempty"`
+	Error     string     `json:"error,omitempty"`
+}
