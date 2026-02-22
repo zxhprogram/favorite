@@ -37,12 +37,14 @@ func main() {
 	urlInfoHandler := handlers.NewURLInfoHandler()
 	userHandler := handlers.NewUserHandler()
 	bookmarkHandler := handlers.NewBookmarkHandler()
+	publicHandler := handlers.NewPublicHandler()
 
 	// 公开路由
 	r.POST("/urlInfo", urlInfoHandler.GetURLInfo)
 	r.GET("/auth/captcha", captchaHandler.GetCaptcha)
 	r.POST("/auth/register", authHandler.Register)
 	r.POST("/auth/login", authHandler.Login)
+	r.GET("/public/bookmarks", publicHandler.GetPublicBookmarks)
 
 	// 需要认证的路由
 	authorized := r.Group("/")

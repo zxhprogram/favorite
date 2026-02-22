@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 
+import 'pages/bookmark_page.dart';
+
 void main() {
   runApp(
     ShadcnApp.router(
@@ -26,20 +28,11 @@ final routers = GoRouter(
       },
       routes: [
         GoRoute(path: '/', builder: (context, state) => summary_page()),
-        GoRoute(path: '/page2', builder: (context, state) => Page2()),
+        GoRoute(path: '/bookmarks', builder: (context, state) => BookmarkPage()),
       ],
     ),
   ],
 );
-
-class Page2 extends StatelessWidget {
-  const Page2({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text('page2'));
-  }
-}
 
 final loginInfo = signal<LoginInfo>(.new(isLogin: false));
 

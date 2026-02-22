@@ -193,6 +193,72 @@ Future<CaptchaRes> captchaCode() async {
   return CaptchaRes.from(res.data);
 }
 
+Future<QueryAllBookmarksRes> queryAllBookmarks() async {
+  if (loginInfo.value.isLogin) {
+    var res = await dio.get(
+      '/bookmarks',
+      options: .new(
+        headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+      ),
+    );
+    return QueryAllBookmarksRes.fromJson(res.data);
+  } else {
+    var res = await dio.get('/public/bookmarks');
+    return QueryAllBookmarksRes.fromJson(res.data);
+  }
+}
+
+class BookmarksItem {
+  int id;
+  String name;
+  String iconUrl;
+  String url;
+  String description;
+  String createAt;
+
+  BookmarksItem({
+    required this.id,
+    required this.name,
+    required this.iconUrl,
+    required this.url,
+    required this.description,
+    required this.createAt,
+  });
+
+  factory BookmarksItem.fromJson(Map<String, dynamic> json) {
+    // 注意：这里去掉了 .new，直接使用类名构造
+    return BookmarksItem(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      iconUrl: json['icon_url'] ?? '',
+      url: json['url'] ?? '',
+      description: json['description'] ?? '',
+      createAt: json['created_at'] ?? '',
+    );
+  }
+}
+
+class QueryAllBookmarksRes {
+  bool success;
+  List<BookmarksItem>? bookmarks;
+
+  QueryAllBookmarksRes({required this.success, this.bookmarks});
+
+  factory QueryAllBookmarksRes.fromJson(Map<String, dynamic> json) {
+    return QueryAllBookmarksRes(
+      success: json['success'] ?? false,
+      bookmarks: json['bookmarks'] != null
+          // 关键修改看这里 👇
+          ? (json['bookmarks'] as List<dynamic>) // 1. 先将整体转换为 List<dynamic>
+                .map(
+                  (e) => BookmarksItem.fromJson(e as Map<String, dynamic>),
+                ) // 2. 在 map 里对具体的 e 进行强转
+                .toList()
+          : [],
+    );
+  }
+}
+
 Future<void> createBookmark(BookmarkCreateReq req) async {
   if (!loginInfo.value.isLogin) {
     print('no login');

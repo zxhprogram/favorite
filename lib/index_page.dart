@@ -161,8 +161,11 @@ class SlideBar extends StatelessWidget {
                 BootstrapIcons.thermometerHalf,
                 const ValueKey('/'),
               ),
-
-              buildButton('大门', BootstrapIcons.grid, const ValueKey('/page2')),
+              buildButton(
+                '书签',
+                BootstrapIcons.grid,
+                const ValueKey('/bookmarks'),
+              ),
               buildButton('Radio', BootstrapIcons.broadcast, const ValueKey(2)),
             ],
           ),
