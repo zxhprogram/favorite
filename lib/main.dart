@@ -1,5 +1,5 @@
 import 'package:favorites/index_page.dart';
-import 'package:favorites/pages/page1.dart';
+import 'package:favorites/pages/summary_page.dart';
 import 'package:favorites/pages/page3.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:go_router/go_router.dart';
@@ -25,7 +25,7 @@ final routers = GoRouter(
         return IndexPage(childPage: child);
       },
       routes: [
-        GoRoute(path: '/', builder: (context, state) => Page1()),
+        GoRoute(path: '/', builder: (context, state) => summary_page()),
         GoRoute(path: '/page2', builder: (context, state) => Page2()),
       ],
     ),
