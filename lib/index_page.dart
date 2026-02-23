@@ -166,7 +166,7 @@ class SlideBar extends StatelessWidget {
                 BootstrapIcons.grid,
                 const ValueKey('/bookmarks'),
               ),
-              buildButton('Radio', BootstrapIcons.broadcast, const ValueKey(2)),
+              buildButton('github', LucideIcons.github, const ValueKey(2)),
             ],
           ),
           const NavigationGap(24),
