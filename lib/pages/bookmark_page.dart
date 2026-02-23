@@ -80,7 +80,22 @@ class _BookmarkPageState extends State<BookmarkPage> {
   Widget build(BuildContext context) {
     var dataSet = userBookmarkList.watch(context);
     return SortableWrap(
-      onSorted: (int oldIndex, int newIndex) {},
+      onSorted: (int oldIndex, int newIndex) {
+        print(
+          'old = ${userBookmarkList.value.bookmarks![oldIndex]}, new = ${userBookmarkList.value.bookmarks![newIndex]}',
+        );
+        print('before = ${userBookmarkList.value.bookmarks}');
+        var element = userBookmarkList.value.bookmarks![oldIndex];
+        userBookmarkList.value.bookmarks!.removeAt(oldIndex);
+        userBookmarkList.value.bookmarks!.insert(newIndex, element);
+        print('after = ${userBookmarkList.value.bookmarks}');
+        var req = <SortItem>[];
+        for (var i = 0; i < userBookmarkList.value.bookmarks!.length; i++) {
+          var id = userBookmarkList.value.bookmarks![i].id;
+          req.add(.new(id: id, sortOrder: i));
+        }
+        sortBookmarks(.new(bookmarks: req));
+      },
       children: [
         ...expandItemList(dataSet),
         Button.ghost(

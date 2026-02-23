@@ -104,3 +104,14 @@ type BookmarkResponse struct {
 	Message   string     `json:"message,omitempty"`
 	Error     string     `json:"error,omitempty"`
 }
+
+// SortBookmarkRequest 书签排序请求
+type SortBookmarkRequest struct {
+	ID        uint `json:"id" binding:"required"`
+	SortOrder int  `json:"sort_order" binding:"required"`
+}
+
+// SortBookmarksRequest 批量书签排序请求
+type SortBookmarksRequest struct {
+	Bookmarks []SortBookmarkRequest `json:"bookmarks" binding:"required,dive"`
+}

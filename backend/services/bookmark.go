@@ -23,6 +23,7 @@ func (s *BookmarkService) Create(userEmail string, req *models.CreateBookmarkReq
 		IconMimeType: req.IconMimeType,
 		URL:          req.URL,
 		Description:  req.Description,
+		SortOrder:    0,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -42,10 +43,10 @@ func (s *BookmarkService) GetByID(id uint, userEmail string) (*models.Bookmark, 
 	return &bookmark, nil
 }
 
-// GetAllByUser 获取用户的所有书签
+// GetAllByUser 获取用户的所有书签（按排序字段升序排列）
 func (s *BookmarkService) GetAllByUser(userEmail string) ([]models.Bookmark, error) {
 	var bookmarks []models.Bookmark
-	result := config.DB.Where("user_email = ?", userEmail).Order("created_at DESC").Find(&bookmarks)
+	result := config.DB.Where("user_email = ?", userEmail).Order("sort_order ASC, created_at DESC").Find(&bookmarks)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -87,4 +88,22 @@ func (s *BookmarkService) Exists(id uint, userEmail string) bool {
 	var bookmark models.Bookmark
 	result := config.DB.Where("id = ? AND user_email = ?", id, userEmail).First(&bookmark)
 	return result.Error == nil
+}
+
+// UpdateSortOrder 更新书签排序
+func (s *BookmarkService) UpdateSortOrder(id uint, userEmail string, sortOrder int) error {
+	result := config.DB.Model(&models.Bookmark{}).
+		Where("id = ? AND user_email = ?", id, userEmail).
+		Update("sort_order", sortOrder)
+	return result.Error
+}
+
+// GetAllByUserSorted 获取用户的所有书签（按排序字段排序）
+func (s *BookmarkService) GetAllByUserSorted(userEmail string) ([]models.Bookmark, error) {
+	var bookmarks []models.Bookmark
+	result := config.DB.Where("user_email = ?", userEmail).Order("sort_order ASC, created_at DESC").Find(&bookmarks)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return bookmarks, nil
 }

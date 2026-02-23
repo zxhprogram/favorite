@@ -58,6 +58,7 @@ func main() {
 		authorized.GET("/bookmarks/:id", bookmarkHandler.GetByID)
 		authorized.PUT("/bookmarks/:id", bookmarkHandler.Update)
 		authorized.DELETE("/bookmarks/:id", bookmarkHandler.Delete)
+		authorized.POST("/bookmarks/sort", bookmarkHandler.Sort)
 	}
 
 	// 启动服务器

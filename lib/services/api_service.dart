@@ -193,6 +193,38 @@ Future<CaptchaRes> captchaCode() async {
   return CaptchaRes.from(res.data);
 }
 
+Future<void> sortBookmarks(SortBookmarksRequest req) async {
+  var r = await dio.post(
+    '/bookmarks/sort',
+    data: req.toJson(),
+    options: .new(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+  print(r.data);
+}
+
+class SortBookmarksRequest {
+  List<SortItem> bookmarks;
+
+  SortBookmarksRequest({required this.bookmarks});
+
+  Map<String, dynamic> toJson() {
+    return {'bookmarks': bookmarks.map((e) => e.toJson()).toList()};
+  }
+}
+
+class SortItem {
+  int id;
+  int sortOrder;
+
+  SortItem({required this.id, required this.sortOrder});
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'sort_order': sortOrder};
+  }
+}
+
 Future<QueryAllBookmarksRes> queryAllBookmarks() async {
   if (loginInfo.value.isLogin) {
     var res = await dio.get(
@@ -238,6 +270,11 @@ class BookmarksItem {
       description: json['description'] ?? '',
       createAt: json['created_at'] ?? '',
     );
+  }
+
+  @override
+  String toString() {
+    return '{id:$id,name:$name,iconUrl=$iconUrl,mimeType:$mimeType,url:$url,description:$description,createdAt:$createAt}';
   }
 }
 

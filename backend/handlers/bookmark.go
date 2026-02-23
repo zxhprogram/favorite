@@ -227,3 +227,41 @@ func (h *BookmarkHandler) Delete(c *gin.Context) {
 		Message: "书签删除成功",
 	})
 }
+
+// Sort 批量排序书签
+func (h *BookmarkHandler) Sort(c *gin.Context) {
+	userEmail, exists := c.Get("userEmail")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.BookmarkResponse{
+			Success: false,
+			Error:   "未授权",
+		})
+		return
+	}
+
+	var req models.SortBookmarksRequest
+	b, _ := io.ReadAll(c.Request.Body)
+	err := json.Unmarshal(b, &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.BookmarkResponse{
+			Success: false,
+			Error:   "请求参数错误: " + err.Error(),
+		})
+		return
+	}
+	// 批量更新排序
+	for _, item := range req.Bookmarks {
+		if err := h.service.UpdateSortOrder(item.ID, userEmail.(string), item.SortOrder); err != nil {
+			c.JSON(http.StatusInternalServerError, models.BookmarkResponse{
+				Success: false,
+				Error:   "更新排序失败",
+			})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, models.BookmarkResponse{
+		Success: true,
+		Message: "书签排序更新成功",
+	})
+}
