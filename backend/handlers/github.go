@@ -59,3 +59,20 @@ func (h *GitHubHandler) GetTrendingRepositories(c *gin.Context) {
 		Repositories: repositories,
 	})
 }
+
+// GetLanguages 获取GitHub Trending支持的所有编程语言列表
+func (h *GitHubHandler) GetLanguages(c *gin.Context) {
+	languages, err := h.service.GetLanguages()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.GitHubLanguagesResponse{
+			Success: false,
+			Error:   "获取编程语言列表失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GitHubLanguagesResponse{
+		Success:   true,
+		Languages: languages,
+	})
+}

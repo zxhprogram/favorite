@@ -35,3 +35,18 @@ type GitHubTrendingResponse struct {
 	Message      string                     `json:"message,omitempty"`
 	Error        string                     `json:"error,omitempty"`
 }
+
+// GitHubLanguage 编程语言信息
+type GitHubLanguage struct {
+	Name  string `json:"name"`
+	URL   string `json:"url"`
+	Color string `json:"color,omitempty"`
+}
+
+// GitHubLanguagesResponse 编程语言列表响应
+type GitHubLanguagesResponse struct {
+	Success   bool             `json:"success"`
+	Languages []GitHubLanguage `json:"languages,omitempty"`
+	Message   string           `json:"message,omitempty"`
+	Error     string           `json:"error,omitempty"`
+}

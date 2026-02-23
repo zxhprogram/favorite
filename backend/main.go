@@ -47,6 +47,7 @@ func main() {
 	r.POST("/auth/login", authHandler.Login)
 	r.GET("/public/bookmarks", publicHandler.GetPublicBookmarks)
 	r.POST("/github/trending", githubHandler.GetTrendingRepositories)
+	r.GET("/github/languages", githubHandler.GetLanguages)
 
 	// 需要认证的路由
 	authorized := r.Group("/")
