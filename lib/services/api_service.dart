@@ -114,7 +114,6 @@ Future<UploadAvatarRes> uploadAvatar(File file) async {
       headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
     ),
   );
-  print(r.data);
   return .fromJson(r.data);
 }
 
@@ -123,7 +122,6 @@ Future<LoginRes> login(LoginReq req) async {
   if (r.statusCode != 200) {
     return .failLogin();
   }
-  print('login -> ${r.data}');
   return .fromJson(r.data);
 }
 
@@ -159,7 +157,6 @@ class LoginRes {
 
 Future<void> createAccount(CreateAccountReq req) async {
   var r = await dio.post('/auth/register', data: req.toJson());
-  print(r.data);
 }
 
 class CreateAccountReq {
@@ -201,7 +198,6 @@ Future<void> sortBookmarks(SortBookmarksRequest req) async {
       headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
     ),
   );
-  print(r.data);
 }
 
 class SortBookmarksRequest {
@@ -301,7 +297,6 @@ class QueryAllBookmarksRes {
 
 Future<void> createBookmark(BookmarkCreateReq req) async {
   if (!loginInfo.value.isLogin) {
-    print('no login');
     return;
   }
   var r = await dio.post(
@@ -311,7 +306,6 @@ Future<void> createBookmark(BookmarkCreateReq req) async {
       headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
     ),
   );
-  print(r.data);
 }
 
 class BookmarkCreateReq {
@@ -346,7 +340,6 @@ Future<UrlInfoRes> fetchUrlInfo(String url) async {
     data: UrlInfoReq(url: url).toJson(),
   );
   var data = response.data;
-  print(data);
   return UrlInfoRes(
     success: data['success'],
     url: data['url'],
