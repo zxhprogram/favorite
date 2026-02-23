@@ -1,16 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:favorites/main.dart';
+import 'package:favorites/models/api.dart';
 import 'package:favorites/services/api_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 
-class Page3 extends StatefulWidget {
+class login_page extends StatefulWidget {
   @override
-  State<Page3> createState() => _Page3State();
+  State<login_page> createState() => _login_pageState();
 }
 
-class _Page3State extends State<Page3> {
+class _login_pageState extends State<login_page> {
   var captchaState = signal<CaptchaRes>(CaptchaRes.empty());
   var isLoading = signal<bool>(true);
   var _isRegister = signal(false);

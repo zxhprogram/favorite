@@ -1,12 +1,12 @@
 import 'package:favorites/index_page.dart';
 import 'package:favorites/pages/summary_page.dart';
-import 'package:favorites/pages/page3.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 
 import 'pages/bookmark_page.dart';
+import 'pages/login_page.dart';
 
 void main() {
   runApp(
@@ -21,14 +21,17 @@ void main() {
 final routers = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/login', builder: (context, state) => Page3()),
+    GoRoute(path: '/login', builder: (context, state) => login_page()),
     ShellRoute(
       builder: (context, state, child) {
         return IndexPage(childPage: child);
       },
       routes: [
         GoRoute(path: '/', builder: (context, state) => summary_page()),
-        GoRoute(path: '/bookmarks', builder: (context, state) => BookmarkPage()),
+        GoRoute(
+          path: '/bookmarks',
+          builder: (context, state) => BookmarkPage(),
+        ),
       ],
     ),
   ],
