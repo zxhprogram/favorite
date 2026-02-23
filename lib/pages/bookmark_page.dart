@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:favorites/ico_viewer.dart';
 import 'package:favorites/services/api_service.dart';
 import 'package:flutter_sortable_wrap/sortable_wrap.dart';
@@ -52,7 +53,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
       case 'svg':
         return SvgPicture.network(url, width: 50, height: 50);
       case 'png':
-        return Image.network(url, width: 50, height: 50);
+        return CachedNetworkImage(imageUrl: url, width: 50, height: 50);
       default:
         return Container();
     }
@@ -68,7 +69,20 @@ class _BookmarkPageState extends State<BookmarkPage> {
         height: 100,
         child: Column(
           children: [
-            icon(e.mimeType, e.iconUrl),
+            HoverCard(
+              hoverBuilder: (context) {
+                return SurfaceCard(
+                  child: Basic(
+                    leading: icon(e.mimeType, e.iconUrl),
+                    title: Text('@flutter'),
+                    content: Text(
+                      'The Flutter SDK provides the tools to build beautiful apps for mobile, web, and desktop from a single codebase.',
+                    ),
+                  ),
+                ).sized(width: 300);
+              },
+              child: icon(e.mimeType, e.iconUrl),
+            ),
             Text(e.name, maxLines: 1, style: .new(fontSize: 12)),
           ],
         ),
