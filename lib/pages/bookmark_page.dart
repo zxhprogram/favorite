@@ -45,6 +45,19 @@ class _BookmarkPageState extends State<BookmarkPage> {
     userBookmarkList.value = await queryAllBookmarks();
   }
 
+  Widget icon(String mimeType, String url) {
+    switch (mimeType) {
+      case 'icon':
+        return IcoViewer(url: url, key: ValueKey(url));
+      case 'svg':
+        return SvgPicture.network(url, width: 50, height: 50);
+      case 'png':
+        return Image.network(url, width: 50, height: 50);
+      default:
+        return Container();
+    }
+  }
+
   List<Widget> expandItemList(QueryAllBookmarksRes res) {
     if (res.bookmarks == null) {
       return [];
@@ -55,7 +68,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
         height: 100,
         child: Column(
           children: [
-            SvgPicture.network(e.iconUrl, width: 50, height: 50),
+            icon(e.mimeType, e.iconUrl),
             Text(e.name, maxLines: 1, style: .new(fontSize: 12)),
           ],
         ),
@@ -141,10 +154,12 @@ class _BookmarkPageState extends State<BookmarkPage> {
                             .new(
                               name: data.title!,
                               iconUrl: data.faviconUrl,
+                              mimeType: data.mimeType,
                               url: url,
                               description: data.title,
                             ),
                           );
+                          await _fetchData();
                           context.pop();
                         },
                       ),

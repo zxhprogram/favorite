@@ -80,18 +80,20 @@ type UpdateAvatarResponse struct {
 
 // CreateBookmarkRequest 创建书签请求
 type CreateBookmarkRequest struct {
-	Name        string `json:"name" binding:"required"`
-	IconURL     string `json:"icon_url" binding:"required"`
-	URL         string `json:"url" binding:"required,url"`
-	Description string `json:"description"`
+	Name         string `json:"name" binding:"required"`
+	IconURL      string `json:"icon_url" binding:"omitempty,url"`
+	IconMimeType string `json:"icon_mime_type"`
+	URL          string `json:"url" binding:"required,url"`
+	Description  string `json:"description"`
 }
 
 // UpdateBookmarkRequest 更新书签请求
 type UpdateBookmarkRequest struct {
-	Name        string `json:"name" binding:"required"`
-	IconURL     string `json:"icon_url" binding:"omitempty,url"`
-	URL         string `json:"url" binding:"required,url"`
-	Description string `json:"description"`
+	Name         string `json:"name" binding:"required"`
+	IconURL      string `json:"icon_url" binding:"omitempty,url"`
+	IconMimeType string `json:"icon_mime_type"`
+	URL          string `json:"url" binding:"required,url"`
+	Description  string `json:"description"`
 }
 
 // BookmarkResponse 书签响应

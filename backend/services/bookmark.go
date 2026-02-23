@@ -17,13 +17,14 @@ func NewBookmarkService() *BookmarkService {
 // Create 创建书签
 func (s *BookmarkService) Create(userEmail string, req *models.CreateBookmarkRequest) (*models.Bookmark, error) {
 	bookmark := &models.Bookmark{
-		UserEmail:   userEmail,
-		Name:        req.Name,
-		IconURL:     req.IconURL,
-		URL:         req.URL,
-		Description: req.Description,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		UserEmail:    userEmail,
+		Name:         req.Name,
+		IconURL:      req.IconURL,
+		IconMimeType: req.IconMimeType,
+		URL:          req.URL,
+		Description:  req.Description,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 	if err := config.DB.Create(bookmark).Error; err != nil {
 		return nil, err
@@ -61,6 +62,7 @@ func (s *BookmarkService) Update(id uint, userEmail string, req *models.UpdateBo
 
 	bookmark.Name = req.Name
 	bookmark.IconURL = req.IconURL
+	bookmark.IconMimeType = req.IconMimeType
 	bookmark.URL = req.URL
 	bookmark.Description = req.Description
 	bookmark.UpdatedAt = time.Now()

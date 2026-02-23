@@ -212,6 +212,7 @@ class BookmarksItem {
   int id;
   String name;
   String iconUrl;
+  String mimeType;
   String url;
   String description;
   String createAt;
@@ -220,6 +221,7 @@ class BookmarksItem {
     required this.id,
     required this.name,
     required this.iconUrl,
+    required this.mimeType,
     required this.url,
     required this.description,
     required this.createAt,
@@ -231,6 +233,7 @@ class BookmarksItem {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       iconUrl: json['icon_url'] ?? '',
+      mimeType: json['icon_mime_type'] ?? '',
       url: json['url'] ?? '',
       description: json['description'] ?? '',
       createAt: json['created_at'] ?? '',
@@ -277,12 +280,14 @@ Future<void> createBookmark(BookmarkCreateReq req) async {
 class BookmarkCreateReq {
   String name;
   String iconUrl;
+  String mimeType;
   String url;
   String? description;
 
   BookmarkCreateReq({
     required this.name,
     required this.iconUrl,
+    required this.mimeType,
     required this.url,
     this.description,
   });
@@ -291,6 +296,7 @@ class BookmarkCreateReq {
     return {
       'name': name,
       'icon_url': iconUrl,
+      'icon_mime_type': mimeType,
       'url': url,
       'description': description,
     };

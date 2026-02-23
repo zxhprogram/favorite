@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"favicon-service/models"
 	"favicon-service/services"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -38,7 +37,6 @@ func (h *BookmarkHandler) Create(c *gin.Context) {
 	var body = c.Request.Body
 	b, _ := io.ReadAll(body)
 	var sss = string(b)
-	fmt.Println(sss)
 
 	var req models.CreateBookmarkRequest
 	err := json.Unmarshal([]byte(sss), &req)
@@ -49,6 +47,15 @@ func (h *BookmarkHandler) Create(c *gin.Context) {
 		})
 		return
 	}
+
+	// 如果没有提供IconMimeType，尝试获取
+	//if req.IconMimeType == "" && req.IconURL != "" {
+	//	_, mimeType, err := h.urlInfoService.DownloadFavicon(req.IconURL)
+	//	if err == nil {
+	//		req.IconMimeType = mimeType
+	//	}
+	//}
+
 	bookmark, err := h.service.Create(userEmail.(string), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.BookmarkResponse{
@@ -161,6 +168,14 @@ func (h *BookmarkHandler) Update(c *gin.Context) {
 	if !strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://") {
 		req.URL = "https://" + req.URL
 	}
+
+	// 如果没有提供IconMimeType，尝试获取
+	//if req.IconMimeType == "" && req.IconURL != "" {
+	//	_, mimeType, err := h.urlInfoService.DownloadFavicon(req.IconURL)
+	//	if err == nil {
+	//		req.IconMimeType = mimeType
+	//	}
+	//}
 
 	bookmark, err := h.service.Update(uint(id), userEmail.(string), &req)
 	if err != nil {
