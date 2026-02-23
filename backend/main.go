@@ -46,7 +46,7 @@ func main() {
 	r.POST("/auth/register", authHandler.Register)
 	r.POST("/auth/login", authHandler.Login)
 	r.GET("/public/bookmarks", publicHandler.GetPublicBookmarks)
-	r.GET("/github/trending", githubHandler.GetTrendingRepositories)
+	r.POST("/github/trending", githubHandler.GetTrendingRepositories)
 
 	// 需要认证的路由
 	authorized := r.Group("/")

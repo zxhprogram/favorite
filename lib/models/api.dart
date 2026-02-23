@@ -2,6 +2,93 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+class GithubTrendingReq {
+  String? language;
+  String? since;
+
+  GithubTrendingReq({this.language, this.since});
+
+  Map<String, dynamic> toJson() {
+    return {'language': language, 'since': since};
+  }
+}
+
+class GithubTrendingRes {
+  bool success;
+  List<Repository> repositories;
+
+  GithubTrendingRes({required this.success, required this.repositories});
+
+  factory GithubTrendingRes.fromJson(Map<String, dynamic> json) {
+    return .new(
+      success: json['success'],
+      repositories: (json['repositories'] as List<dynamic>)
+          .map((e) => Repository.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class Repository {
+  String author;
+  String name;
+  String avatar;
+  String url;
+  String? description;
+  String language;
+  String languageColor;
+  int stars;
+  int forks;
+  List<BuildBy>? buildBy;
+
+  Repository({
+    required this.author,
+    required this.name,
+    required this.avatar,
+    required this.url,
+    this.description,
+    required this.language,
+    required this.languageColor,
+    required this.stars,
+    required this.forks,
+    this.buildBy,
+  });
+
+  factory Repository.fromJson(Map<String, dynamic> json) {
+    return Repository(
+      author: json['author'],
+      name: json['name'],
+      avatar: json['avatar'],
+      url: json['url'],
+      language: json['language'],
+      languageColor: json['languageColor'],
+      stars: json['stars'],
+      forks: json['forks'],
+      buildBy: json['buildBy'] == null
+          ? null
+          : (json['buildBy'] as List<dynamic>)
+                .map((e) => BuildBy.fromJson(e as Map<String, dynamic>))
+                .toList(),
+    );
+  }
+}
+
+class BuildBy {
+  String username;
+  String href;
+  String avatar;
+
+  BuildBy({required this.username, required this.href, required this.avatar});
+
+  factory BuildBy.fromJson(Map<String, dynamic> json) {
+    return .new(
+      username: json['username'],
+      href: json['href'],
+      avatar: json['avatar'],
+    );
+  }
+}
+
 class UploadAvatarRes {
   bool success;
   String url;
@@ -237,4 +324,27 @@ class UrlInfoRes {
     required this.mimeType,
     this.title,
   });
+}
+
+class LoginReq {
+  String email;
+  String password;
+  String captchaId;
+  String captchaCode;
+
+  LoginReq({
+    required this.email,
+    required this.password,
+    required this.captchaId,
+    required this.captchaCode,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'password': password,
+      'captcha_id': captchaId,
+      'captcha_code': captchaCode,
+    };
+  }
 }

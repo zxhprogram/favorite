@@ -1,4 +1,5 @@
 import 'package:favorites/index_page.dart';
+import 'package:favorites/pages/github_page.dart';
 import 'package:favorites/pages/summary_page.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:go_router/go_router.dart';
@@ -32,6 +33,7 @@ final routers = GoRouter(
           path: '/bookmarks',
           builder: (context, state) => BookmarkPage(),
         ),
+        GoRoute(path: '/github', builder: (context, state) => GithubPage()),
       ],
     ),
   ],

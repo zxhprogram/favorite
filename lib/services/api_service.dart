@@ -29,27 +29,9 @@ var dio = Dio(.new(baseUrl: 'http://localhost:8081'))
     ),
   );
 
-class LoginReq {
-  String email;
-  String password;
-  String captchaId;
-  String captchaCode;
-
-  LoginReq({
-    required this.email,
-    required this.password,
-    required this.captchaId,
-    required this.captchaCode,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'password': password,
-      'captcha_id': captchaId,
-      'captcha_code': captchaCode,
-    };
-  }
+Future<GithubTrendingRes> githubTrending(GithubTrendingReq req) async {
+  var r = await dio.post('/github/trending', data: req.toJson());
+  return GithubTrendingRes.fromJson(r.data);
 }
 
 Future<UploadAvatarRes> uploadAvatar(File file) async {
