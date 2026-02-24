@@ -119,3 +119,48 @@ Future<UrlInfoRes> fetchUrlInfo(String url) async {
     mimeType: mimeTypeMaps[data['mime_type']]!,
   );
 }
+
+Future<QueryAllFoldersRes> queryAllFolders() async {
+  if (!loginInfo.value.isLogin) {
+    return const QueryAllFoldersRes(success: false);
+  }
+  var res = await dio.get(
+    '/folders',
+    options: Options(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+  return QueryAllFoldersRes.fromJson(res.data);
+}
+
+Future<void> createFolder(CreateFolderReq req) async {
+  if (!loginInfo.value.isLogin) return;
+  await dio.post(
+    '/folders',
+    data: req.toJson(),
+    options: Options(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+}
+
+Future<void> moveBookmarkToFolder(MoveBookmarkToFolderReq req) async {
+  if (!loginInfo.value.isLogin) return;
+  await dio.post(
+    '/folders/move',
+    data: req.toJson(),
+    options: Options(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+}
+
+Future<void> deleteFolder(int folderId) async {
+  if (!loginInfo.value.isLogin) return;
+  await dio.delete(
+    '/folders/$folderId',
+    options: Options(
+      headers: {'Authorization': 'Bearer ${loginInfo.value.token}'},
+    ),
+  );
+}

@@ -1,10 +1,11 @@
 import 'package:favorites/models/api.dart';
 import 'package:favorites/services/api_service.dart';
-import 'package:flutter/material.dart' as  m;
+import 'package:flutter/material.dart' as m;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 
 class GithubPage extends StatefulWidget {
+  const GithubPage({super.key});
   @override
   State<GithubPage> createState() => _GithubPageState();
 }

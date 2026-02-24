@@ -39,6 +39,7 @@ func main() {
 	bookmarkHandler := handlers.NewBookmarkHandler()
 	publicHandler := handlers.NewPublicHandler()
 	githubHandler := handlers.NewGitHubHandler()
+	folderHandler := handlers.NewFolderHandler()
 
 	// 公开路由
 	r.POST("/urlInfo", urlInfoHandler.GetURLInfo)
@@ -62,6 +63,14 @@ func main() {
 		authorized.PUT("/bookmarks/:id", bookmarkHandler.Update)
 		authorized.DELETE("/bookmarks/:id", bookmarkHandler.Delete)
 		authorized.POST("/bookmarks/sort", bookmarkHandler.Sort)
+
+		authorized.POST("/folders", folderHandler.Create)
+		authorized.GET("/folders", folderHandler.GetAll)
+		authorized.GET("/folders/:id", folderHandler.GetByID)
+		authorized.PUT("/folders/:id", folderHandler.Update)
+		authorized.DELETE("/folders/:id", folderHandler.Delete)
+		authorized.POST("/folders/move", folderHandler.MoveBookmark)
+		authorized.GET("/folders/:id/bookmarks", folderHandler.GetBookmarksInFolder)
 	}
 
 	// 启动服务器

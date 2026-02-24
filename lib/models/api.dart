@@ -216,15 +216,16 @@ class SortItem {
 }
 
 class BookmarksItem {
-  int id;
-  String name;
-  String iconUrl;
-  String mimeType;
-  String url;
-  String description;
-  String createAt;
+  final int id;
+  final String name;
+  final String iconUrl;
+  final String mimeType;
+  final String url;
+  final String description;
+  final String createAt;
+  final int? folderId;
 
-  BookmarksItem({
+  const BookmarksItem({
     required this.id,
     required this.name,
     required this.iconUrl,
@@ -232,10 +233,10 @@ class BookmarksItem {
     required this.url,
     required this.description,
     required this.createAt,
+    this.folderId,
   });
 
   factory BookmarksItem.fromJson(Map<String, dynamic> json) {
-    // 注意：这里去掉了 .new，直接使用类名构造
     return BookmarksItem(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -244,6 +245,7 @@ class BookmarksItem {
       url: json['url'] ?? '',
       description: json['description'] ?? '',
       createAt: json['created_at'] ?? '',
+      folderId: json['folder_id'],
     );
   }
 
@@ -254,20 +256,17 @@ class BookmarksItem {
 }
 
 class QueryAllBookmarksRes {
-  bool success;
-  List<BookmarksItem>? bookmarks;
+  final bool success;
+  final List<BookmarksItem>? bookmarks;
 
-  QueryAllBookmarksRes({required this.success, this.bookmarks});
+  const QueryAllBookmarksRes({required this.success, this.bookmarks});
 
   factory QueryAllBookmarksRes.fromJson(Map<String, dynamic> json) {
     return QueryAllBookmarksRes(
       success: json['success'] ?? false,
       bookmarks: json['bookmarks'] != null
-          // 关键修改看这里 👇
-          ? (json['bookmarks'] as List<dynamic>) // 1. 先将整体转换为 List<dynamic>
-                .map(
-                  (e) => BookmarksItem.fromJson(e as Map<String, dynamic>),
-                ) // 2. 在 map 里对具体的 e 进行强转
+          ? (json['bookmarks'] as List<dynamic>)
+                .map((e) => BookmarksItem.fromJson(e as Map<String, dynamic>))
                 .toList()
           : [],
     );
@@ -346,5 +345,67 @@ class LoginReq {
       'captcha_id': captchaId,
       'captcha_code': captchaCode,
     };
+  }
+}
+
+class FolderItem {
+  final int id;
+  final String name;
+  final int sortOrder;
+  final String createdAt;
+
+  const FolderItem({
+    required this.id,
+    required this.name,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+
+  factory FolderItem.fromJson(Map<String, dynamic> json) {
+    return FolderItem(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      sortOrder: json['sort_order'] ?? 0,
+      createdAt: json['created_at'] ?? '',
+    );
+  }
+}
+
+class QueryAllFoldersRes {
+  final bool success;
+  final List<FolderItem>? folders;
+
+  const QueryAllFoldersRes({required this.success, this.folders});
+
+  factory QueryAllFoldersRes.fromJson(Map<String, dynamic> json) {
+    return QueryAllFoldersRes(
+      success: json['success'] ?? false,
+      folders: json['folders'] != null
+          ? (json['folders'] as List<dynamic>)
+                .map((e) => FolderItem.fromJson(e as Map<String, dynamic>))
+                .toList()
+          : [],
+    );
+  }
+}
+
+class CreateFolderReq {
+  final String name;
+
+  const CreateFolderReq({required this.name});
+
+  Map<String, dynamic> toJson() {
+    return {'name': name};
+  }
+}
+
+class MoveBookmarkToFolderReq {
+  final int bookmarkId;
+  final int? folderId;
+
+  const MoveBookmarkToFolderReq({required this.bookmarkId, this.folderId});
+
+  Map<String, dynamic> toJson() {
+    return {'bookmark_id': bookmarkId, 'folder_id': folderId};
   }
 }
