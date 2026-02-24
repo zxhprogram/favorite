@@ -22,7 +22,7 @@ void main() {
 final routers = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/login', builder: (context, state) => login_page()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
     ShellRoute(
       builder: (context, state, child) {
         return IndexPage(childPage: child);
