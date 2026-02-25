@@ -167,6 +167,7 @@ class SlideBar extends StatelessWidget {
                 const ValueKey('/bookmarks'),
               ),
               buildButton('github', LucideIcons.github, const ValueKey('/github')),
+              buildButton('keystats', LucideIcons.github, const ValueKey('/keystats')),
             ],
           ),
           const NavigationGap(24),
