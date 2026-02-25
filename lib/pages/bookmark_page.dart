@@ -409,42 +409,61 @@ class _BookmarkPageState extends State<BookmarkPage> {
       color: Colors.transparent,
       child: GestureDetector(
         onSecondaryTapDown: (details) {
-          Object? dropdownController;
-          dropdownController = showDropdown(
-            context: context,
-            position: details.globalPosition,
-            builder: (context) {
-              return DropdownMenu(
+          final overlay = Overlay.of(context);
+          final overlayBox = overlay.context.findRenderObject() as RenderBox;
+          final localPosition = overlayBox.globalToLocal(
+            details.globalPosition,
+          );
+          late OverlayEntry entry;
+          entry = OverlayEntry(
+            builder: (context) => GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => entry.remove(),
+              child: Stack(
                 children: [
-                  MenuButton(
-                    leading: const Icon(Icons.folder),
-                    child: const Text('新建文件夹'),
-                    onPressed: (_) {
-                      (dropdownController as dynamic).remove();
-                      Future.microtask(() => _showCreateFolderDialog());
-                    },
-                  ),
-                  MenuButton(
-                    leading: const Icon(Icons.link),
-                    child: const Text('新建书签'),
-                    onPressed: (_) {
-                      (dropdownController as dynamic).remove();
-                      Future.microtask(() => _showCreateBookmarkDialog());
-                    },
-                  ),
-                  const MenuDivider(),
-                  MenuButton(
-                    leading: const Icon(Icons.refresh),
-                    child: const Text('刷新'),
-                    onPressed: (_) {
-                      (dropdownController as dynamic).remove();
-                      _fetchData();
-                    },
+                  Positioned(
+                    left: localPosition.dx,
+                    top: localPosition.dy,
+                    child: GestureDetector(
+                      onTap: () {},
+                      child: Card(
+                        child: DropdownMenu(
+                          children: [
+                            MenuButton(
+                              leading: const Icon(Icons.folder),
+                              child: const Text('新建文件夹'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _showCreateFolderDialog();
+                              },
+                            ),
+                            MenuButton(
+                              leading: const Icon(Icons.link),
+                              child: const Text('新建书签'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _showCreateBookmarkDialog();
+                              },
+                            ),
+                            const MenuDivider(),
+                            MenuButton(
+                              leading: const Icon(Icons.refresh),
+                              child: const Text('刷新'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _fetchData();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
           );
+          overlay.insert(entry);
         },
         child: Container(
           color: Colors.transparent,
