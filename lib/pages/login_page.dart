@@ -53,10 +53,10 @@ class _login_pageState extends State<login_page> {
   }
 
   Widget _buildSocialButton(
-    String text,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
+      String text,
+      IconData icon,
+      VoidCallback onPressed,
+      ) {
     return SizedBox(
       width: double.infinity,
       height: 44,
@@ -306,13 +306,13 @@ class _login_pageState extends State<login_page> {
         _buildSocialButton(
           'Continue with Google',
           FontAwesomeIcons.google,
-          () {},
+              () {},
         ),
         const SizedBox(height: 12),
         _buildSocialButton(
           'Continue with GitHub',
           FontAwesomeIcons.github,
-          () {},
+              () {},
         ),
         const SizedBox(height: 24),
         _buildDivider(),

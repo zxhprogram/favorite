@@ -2,15 +2,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:favorites/ico_viewer.dart';
 import 'package:favorites/models/api.dart';
 import 'package:favorites/services/api_service.dart';
-import 'package:flutter_sortable_wrap/sortable_wrap.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BookmarkPage extends StatefulWidget {
-  BookmarkPage({super.key});
+  const BookmarkPage({super.key});
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
@@ -18,24 +19,19 @@ class BookmarkPage extends StatefulWidget {
 
 class _BookmarkPageState extends State<BookmarkPage> {
   final newTagImg = signal<String?>(null);
-  FormController c = FormController();
+  final folderNameController = TextEditingController();
+  final titleController = TextEditingController();
+  final userBookmarkList = signal<QueryAllBookmarksRes>(
+    const QueryAllBookmarksRes(success: false),
+  );
+  final folderList = signal<QueryAllFoldersRes>(
+    const QueryAllFoldersRes(success: false),
+  );
+  final expandedFolders = signal<Set<int>>({});
+  final hoveredFolderId = signal<int?>(null);
+
   String newTagMimeType = '';
-
-  TextEditingController titleController = .new();
-  final userBookmarkList = signal<QueryAllBookmarksRes>(.new(success: false));
-
-  Widget fetchTagImg(String? url) {
-    switch (newTagMimeType) {
-      case 'icon':
-        return IcoViewer(url: url!, key: ValueKey(url));
-      case 'svg':
-        return SvgPicture.network(url!, width: 80, height: 80);
-      case 'png':
-        return Image.network(url!);
-      default:
-        return Container();
-    }
-  }
+  FormController formController = FormController();
 
   @override
   void initState() {
@@ -44,163 +40,452 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   Future<void> _fetchData() async {
-    userBookmarkList.value = await queryAllBookmarks();
+    final bookmarks = await queryAllBookmarks();
+    final folders = await queryAllFolders();
+    userBookmarkList.value = bookmarks;
+    folderList.value = folders;
   }
 
-  Widget icon(String mimeType, String url) {
+  Widget _buildIcon(String mimeType, String url, {double size = 50}) {
     switch (mimeType) {
       case 'icon':
         return IcoViewer(url: url, key: ValueKey(url));
       case 'svg':
-        return SvgPicture.network(url, width: 50, height: 50);
+        return SvgPicture.network(url, width: size, height: size);
       case 'png':
-        return CachedNetworkImage(imageUrl: url, width: 50, height: 50);
+        return CachedNetworkImage(imageUrl: url, width: size, height: size);
       default:
-        return Container();
+        return Icon(Icons.link, size: size);
     }
   }
 
-  List<Widget> expandItemList(QueryAllBookmarksRes res) {
-    if (res.bookmarks == null) {
-      return [];
-    }
-    return res.bookmarks!.map((e) {
-      return Container(
-        width: 100,
-        height: 100,
-        child: Column(
-          children: [
-            HoverCard(
-              hoverBuilder: (context) {
-                return SurfaceCard(
-                  child: Basic(
-                    leading: icon(e.mimeType, e.iconUrl),
-                    title: Text('@flutter'),
-                    content: Text(
-                      'The Flutter SDK provides the tools to build beautiful apps for mobile, web, and desktop from a single codebase.',
+  void _showCreateFolderDialog() {
+    folderNameController.clear();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('创建文件夹'),
+        content: TextField(
+          controller: folderNameController,
+          placeholder: const Text('请输入文件夹名称'),
+          autofocus: true,
+        ),
+        actions: [
+          Button.ghost(child: const Text('取消'), onPressed: () => context.pop()),
+          Button.primary(
+            child: const Text('创建'),
+            onPressed: () async {
+              final name = folderNameController.text.trim();
+              if (name.isEmpty) return;
+              await createFolder(CreateFolderReq(name: name));
+              if (context.mounted) context.pop();
+              await _fetchData();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateBookmarkDialog() {
+    newTagImg.value = null;
+    titleController.clear();
+    showDialog(
+      context: context,
+      builder: (context) {
+        final url = newTagImg.watch(context);
+        return material.Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: 500,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.gray,
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: url != null
+                        ? _buildIcon(newTagMimeType, url, size: 80)
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: Colors.gray[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.link, size: 40),
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  Form(
+                    controller: formController,
+                    child: FormTableLayout(
+                      rows: [
+                        FormField<String>(
+                          key: FormKey(#url),
+                          label: const Text('书签地址'),
+                          child: const TextField(placeholder: Text('输入书签地址')),
+                        ),
+                        FormField<String>(
+                          key: FormKey(#title),
+                          label: const Text('书签标题'),
+                          child: TextField(
+                            placeholder: const Text('输入书签标题'),
+                            controller: titleController,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ).sized(width: 300);
-              },
-              child: icon(e.mimeType, e.iconUrl),
-            ),
-            Text(e.name, maxLines: 1, style: .new(fontSize: 12)),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var dataSet = userBookmarkList.watch(context);
-    return SortableWrap(
-      onSorted: (int oldIndex, int newIndex) {
-        print(
-          'old = ${userBookmarkList.value.bookmarks![oldIndex]}, new = ${userBookmarkList.value.bookmarks![newIndex]}',
-        );
-        print('before = ${userBookmarkList.value.bookmarks}');
-        var element = userBookmarkList.value.bookmarks![oldIndex];
-        userBookmarkList.value.bookmarks!.removeAt(oldIndex);
-        userBookmarkList.value.bookmarks!.insert(newIndex, element);
-        print('after = ${userBookmarkList.value.bookmarks}');
-        var req = <SortItem>[];
-        for (var i = 0; i < userBookmarkList.value.bookmarks!.length; i++) {
-          var id = userBookmarkList.value.bookmarks![i].id;
-          req.add(.new(id: id, sortOrder: i));
-        }
-        sortBookmarks(.new(bookmarks: req));
-      },
-      children: [
-        ...expandItemList(dataSet),
-        Button.ghost(
-          alignment: .center,
-          child: FaIcon(Icons.add, size: 50),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                var url = newTagImg.watch(context);
-                return Container(
-                  width: 600,
-                  height: 300,
-                  padding: .all(30),
-                  clipBehavior: .hardEdge,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: .all(color: Colors.gray, width: 1),
-                    borderRadius: .all(.circular(50)),
-                    boxShadow: [
-                      .new(
-                        color: Colors.gray,
-                        offset: .new(10, 10),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Column(
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      SizedBox(
-                        width: 100,
-                        height: 100,
-                        child: fetchTagImg(url),
+                      Button.ghost(
+                        child: const Text('取消'),
+                        onPressed: () => context.pop(),
                       ),
-                      gap(10),
-                      Form(
-                        controller: c,
-                        child: FormTableLayout(
-                          rows: [
-                            FormField<String>(
-                              key: FormKey(#url),
-                              label: Text('书签地址'),
-                              child: TextField(initialValue: '输入书签地址'),
-                            ),
-                            FormField<String>(
-                              key: FormKey(#title),
-                              label: Text('书签标题'),
-                              child: TextField(
-                                initialValue: '输入书签标题',
-                                autofocus: true,
-                                controller: titleController,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      gap(10),
-                      Button.card(
-                        child: Text('创建'),
+                      const SizedBox(width: 8),
+                      Button.primary(
+                        child: const Text('创建'),
                         onPressed: () async {
-                          var url = c.getValue(FormKey(#url)) as String;
-                          var data = await fetchUrlInfo(url);
+                          final url =
+                              formController.getValue(FormKey(#url)) as String;
+                          if (url.isEmpty) return;
+                          final data = await fetchUrlInfo(url);
                           titleController.text = data.title ?? '';
                           newTagImg.value = data.faviconUrl;
-                          print('url = ${data.faviconUrl}');
                           newTagMimeType = data.mimeType;
-                          print(
-                            'url = ${data.faviconUrl}, title = ${data.title}',
-                          );
                           await createBookmark(
-                            .new(
-                              name: data.title!,
+                            BookmarkCreateReq(
+                              name: data.title ?? url,
                               iconUrl: data.faviconUrl,
                               mimeType: data.mimeType,
                               url: url,
                               description: data.title,
                             ),
                           );
+                          if (context.mounted) context.pop();
                           await _fetchData();
-                          context.pop();
                         },
                       ),
                     ],
                   ),
-                );
-              },
-            );
-          },
-        ).sized(width: 100, height: 100),
-      ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFolderItem(FolderItem folder) {
+    final isExpanded = expandedFolders.watch(context).contains(folder.id);
+    final isHovered = hoveredFolderId.watch(context) == folder.id;
+    final bookmarks = userBookmarkList.watch(context);
+    final folderBookmarks =
+        bookmarks.bookmarks?.where((b) => b.folderId == folder.id).toList() ??
+        [];
+
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) {
+        hoveredFolderId.value = folder.id;
+        if (!isExpanded) {
+          expandedFolders.value = {...expandedFolders.value, folder.id};
+        }
+        return true;
+      },
+      onLeave: (_) {
+        if (hoveredFolderId.value == folder.id) {
+          hoveredFolderId.value = null;
+        }
+      },
+      onAcceptWithDetails: (details) async {
+        await moveBookmarkToFolder(
+          MoveBookmarkToFolderReq(
+            bookmarkId: details.data,
+            folderId: folder.id,
+          ),
+        );
+        hoveredFolderId.value = null;
+        await _fetchData();
+      },
+      builder: (context, candidateData, rejectedData) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isHovered ? Colors.blue[50] : Colors.gray[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isHovered ? Colors.blue : Colors.gray[300],
+              width: isHovered ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  final newSet = Set<int>.from(expandedFolders.value);
+                  if (newSet.contains(folder.id)) {
+                    newSet.remove(folder.id);
+                  } else {
+                    newSet.add(folder.id);
+                  }
+                  expandedFolders.value = newSet;
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isExpanded ? Icons.folder_open : Icons.folder,
+                        color: Colors.amber[700],
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          folder.name,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Text(
+                        '${folderBookmarks.length}',
+                        style: TextStyle(color: Colors.gray[600], fontSize: 12),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: Colors.gray[600],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (isExpanded && folderBookmarks.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.only(left: 16, bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: folderBookmarks
+                        .map((bookmark) => _buildBookmarkChip(bookmark))
+                        .toList(),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBookmarkChip(BookmarksItem bookmark) {
+    return Draggable<int>(
+      data: bookmark.id,
+      feedback: material.Material(
+        elevation: 4,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: _buildIcon(
+                  bookmark.mimeType,
+                  bookmark.iconUrl,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(bookmark.name, style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.5,
+        child: _buildBookmarkItem(bookmark),
+      ),
+      child: _buildBookmarkItem(bookmark),
+    );
+  }
+
+  Widget _buildBookmarkItem(BookmarksItem bookmark) {
+    return HoverCard(
+      hoverBuilder: (context) {
+        return SurfaceCard(
+          child: Basic(
+            leading: _buildIcon(bookmark.mimeType, bookmark.iconUrl),
+            title: Text(bookmark.name),
+            content: Text(
+              bookmark.description.isNotEmpty
+                  ? bookmark.description
+                  : bookmark.url,
+            ),
+          ),
+        ).sized(width: 300);
+      },
+      child: GestureDetector(
+        onTap: () => launchUrl(Uri.parse(bookmark.url)),
+        child: Container(
+          width: 100,
+          height: 100,
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.gray[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _buildIcon(bookmark.mimeType, bookmark.iconUrl),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                bookmark.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildItems() {
+    final folders = folderList.watch(context);
+    final bookmarks = userBookmarkList.watch(context);
+    final items = <Widget>[];
+
+    if (folders.folders != null) {
+      for (final folder in folders.folders!) {
+        items.add(
+          SizedBox(width: double.infinity, child: _buildFolderItem(folder)),
+        );
+      }
+    }
+
+    if (bookmarks.bookmarks != null) {
+      final rootBookmarks = bookmarks.bookmarks!.where(
+        (b) => b.folderId == null,
+      );
+      for (final bookmark in rootBookmarks) {
+        items.add(_buildBookmarkChip(bookmark));
+      }
+    }
+
+    return items;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return material.Material(
+      color: Colors.transparent,
+      child: GestureDetector(
+        onSecondaryTapDown: (details) {
+          final overlay = Overlay.of(context);
+          final overlayBox = overlay.context.findRenderObject() as RenderBox;
+          final localPosition = overlayBox.globalToLocal(
+            details.globalPosition,
+          );
+          late OverlayEntry entry;
+          entry = OverlayEntry(
+            builder: (context) => GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => entry.remove(),
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: localPosition.dx,
+                    top: localPosition.dy,
+                    child: GestureDetector(
+                      onTap: () {},
+                      child: Card(
+                        child: DropdownMenu(
+                          children: [
+                            MenuButton(
+                              leading: const Icon(Icons.folder),
+                              child: const Text('新建文件夹'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _showCreateFolderDialog();
+                              },
+                            ),
+                            MenuButton(
+                              leading: const Icon(Icons.link),
+                              child: const Text('新建书签'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _showCreateBookmarkDialog();
+                              },
+                            ),
+                            const MenuDivider(),
+                            MenuButton(
+                              leading: const Icon(Icons.refresh),
+                              child: const Text('刷新'),
+                              onPressed: (_) {
+                                entry.remove();
+                                _fetchData();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          overlay.insert(entry);
+        },
+        child: Container(
+          color: Colors.transparent,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ..._buildItems(),
+                  Button.ghost(
+                    alignment: Alignment.center,
+                    onPressed: _showCreateBookmarkDialog,
+                    child: const FaIcon(Icons.add, size: 50),
+                  ).sized(width: 100, height: 100),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

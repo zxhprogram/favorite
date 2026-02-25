@@ -22,5 +22,5 @@ func InitDatabase() error {
 	}
 
 	// 自动迁移表结构
-	return DB.AutoMigrate(&models.User{}, &models.Captcha{}, &models.Bookmark{})
+	return DB.AutoMigrate(&models.User{}, &models.Captcha{}, &models.Bookmark{}, &models.Folder{})
 }
