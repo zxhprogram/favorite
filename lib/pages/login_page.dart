@@ -53,10 +53,10 @@ class _login_pageState extends State<login_page> {
   }
 
   Widget _buildSocialButton(
-      String text,
-      IconData icon,
-      VoidCallback onPressed,
-      ) {
+    String text,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return SizedBox(
       width: double.infinity,
       height: 44,
@@ -98,34 +98,38 @@ class _login_pageState extends State<login_page> {
   }
 
   Widget _buildGradientButton(String text, VoidCallback onPressed) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: double.infinity,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click, // 鼠标悬浮变成小手
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque, // 确保空白区域也能响应点击
+        onTap: onPressed,
+        child: Container(
+          width: double.infinity,
+          height: 44,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
           ),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
-            ],
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+              ],
+            ),
           ),
         ),
       ),
@@ -270,11 +274,13 @@ class _login_pageState extends State<login_page> {
               Container(
                 width: 420,
                 padding: const EdgeInsets.all(48),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: rrr
-                      ? _buildRegisterForm(rr, loading)
-                      : _buildLoginForm(rr, loading),
+                child: SingleChildScrollView(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: rrr
+                        ? _buildRegisterForm(rr, loading)
+                        : _buildLoginForm(rr, loading),
+                  ),
                 ),
               ),
             ],
@@ -306,13 +312,13 @@ class _login_pageState extends State<login_page> {
         _buildSocialButton(
           'Continue with Google',
           FontAwesomeIcons.google,
-              () {},
+          () {},
         ),
         const SizedBox(height: 12),
         _buildSocialButton(
           'Continue with GitHub',
           FontAwesomeIcons.github,
-              () {},
+          () {},
         ),
         const SizedBox(height: 24),
         _buildDivider(),
